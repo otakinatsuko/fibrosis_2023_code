@@ -85,7 +85,7 @@ for kk = 1:length(files)
     intR = sum(sum(input(:,:,1)))/sum(sum(input(:,:,1)>0));
     intG = sum(sum(input(:,:,2)))/sum(sum(input(:,:,2)>0));
     intB = sum(sum(input(:,:,3)))/sum(sum(input(:,:,3)>0));
-    area_ratio = sum(sum(sum(input>0)))/sum(mask_circle(:));
+    area_ratio = sum(sum(squeeze(input(:,:,1)>0)))/sum(mask_circle(:));
     output_metrics(:,kk) = [intR,intG,intB,area_ratio];
 
     % input = img_cells.*mask_deep_red;
