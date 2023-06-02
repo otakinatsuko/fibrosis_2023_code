@@ -3,7 +3,8 @@ close all
 
 %% read files
 addpath('MyFunctions')
-path = '/Users/natsuko/Desktop/20230524/';
+% path = '/Users/natsuko/Desktop/input_example/';
+path = './input/';
 files = dir([path,'/*.tif']);
 s = 10;
 roi=100;
@@ -46,7 +47,8 @@ for K = 1:length(files)
     temp2 = temp(logical((temp>0.1).*(temp<0.4)));
     temp2= round(100*temp2)/100;
     th3 = mode(temp2)*1.6;
-    mask_fibrotic = bwareaopen(mask_nonwhite.*(movmean(movmean(mask_nonwhite,roi, 1),roi, 2)>th3),10000);
+    mask_fibrotic_movmean = movmean(movmean(mask_nonwhite,roi, 1),roi, 2);
+    mask_fibrotic = bwareaopen(mask_nonwhite.*(mask_fibrotic_movmean>th3),10000);
     img_fibrotic = img.*mask_fibrotic;
 
     figure(2)
@@ -66,7 +68,16 @@ for K = 1:length(files)
     subplot(1,3,3);imagesc(uint8(img_fibrotic_blue));daspect([1 1 1])
     ratio(K) = sum(sum(img_fibrotic_blue(:,:,1)>0))/sum(sum(mask_tissue>0));
 
+    %% save images
+    imwrite(uint8(img_fibrotic_red), strcat('./output/',temp_file,'_pca_red_','.tiff'))
+    imwrite(uint8(img_fibrotic_blue), strcat('./output/',temp_file,'_pca_blue_','.tiff')) 
+    imwrite(uint8(mask_nonwhite*255), strcat('./output/',temp_file,'_mask_nonwhite_','.tiff'))
+    imwrite(uint8(mask_tissue*255), strcat('./output/',temp_file,'_mask_tissue_','.tiff'))
+    imwrite(uint8(mask_fibrotic_movmean/max(mask_fibrotic_movmean(:))*255), strcat('./output/',temp_file,'_mask_fibrotic_movmean_','.tiff'))
+    imwrite(uint8(img_fibrotic), strcat('./output/',temp_file,'_img_fibrotic_','.tiff'))
+    
     K
 end
 
-
+%%
+writematrix(ratio*100,"./output/scores.txt","Delimiter","\t")

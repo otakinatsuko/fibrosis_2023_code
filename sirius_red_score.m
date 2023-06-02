@@ -1,7 +1,7 @@
 clear all
 close all
 
-path = '/Users/natsuko/Desktop/sirius_red_20230530/';
+path = './input/';
 files = dir([path,'*.tif']);
 P=50;
 mag = 1/30; % image magnification
@@ -60,23 +60,25 @@ for kk = 1:length(files)
         temp3 = -temp3;
     end
     temp = temp3./ill.*mask_circle;
-    img_norm = img_central./ill*mean(ill(ill>0));
     mask_cells = (temp<threshold);
+    ill = ill/max(ill(:));
+    img_norm = img_central./ill;
     img_cells = img_norm.*mask_cells;
     img_cells(isnan(img_cells))=0;
     
     %% mask to deep red region
-    mask_deep_red = (temp>0.8);
+    % mask_deep_red = (temp>0.8);
     
     % figure;imagesc(uint8(img_central));daspect([1 1 1]);drawnow
     % % bg = movmean(movmean(img./ill*mean2(ill),100,1),100,2);
     % % figure;imagesc(uint8(img./ill*mean2(ill)-bg+mean2(bg)))
     % figure;imagesc(uint8(img_cells));daspect([1 1 1]);drawnow
     % figure;imagesc(uint8(img_cells.*mask_deep_red));daspect([1 1 1]);drawnow
-    figure(7);
+    % figure(7);
     subplot(1,3,1);imagesc(uint8(img_central));daspect([1 1 1]);drawnow
     subplot(1,3,2);imagesc(uint8(img_cells));daspect([1 1 1]);drawnow
-    subplot(1,3,3);imagesc(uint8(img_cells.*mask_deep_red));daspect([1 1 1]);drawnow
+    subplot(1,3,3);imagesc(uint8(img_norm.*(1-mask_cells)));daspect([1 1 1]);drawnow
+    % subplot(1,3,3);imagesc(uint8(img_cells.*mask_deep_red));daspect([1 1 1]);drawnow
 
     %% metrics
     input = img_cells;
@@ -86,12 +88,18 @@ for kk = 1:length(files)
     area_ratio = sum(sum(sum(input>0)))/sum(mask_circle(:));
     output_metrics(:,kk) = [intR,intG,intB,area_ratio];
 
-    input = img_cells.*mask_deep_red;
-    intR = sum(sum(input(:,:,1)))/sum(sum(input(:,:,1)>0));
-    intG = sum(sum(input(:,:,2)))/sum(sum(input(:,:,2)>0));
-    intB = sum(sum(input(:,:,3)))/sum(sum(input(:,:,3)>0));
-    area_ratio = sum(sum(sum(input>0)))/sum(mask_circle(:));
-    output_metrics_wo_deep_red(:,kk) = [intR,intG,intB,area_ratio];
+    % input = img_cells.*mask_deep_red;
+    % intR = sum(sum(input(:,:,1)))/sum(sum(input(:,:,1)>0));
+    % intG = sum(sum(input(:,:,2)))/sum(sum(input(:,:,2)>0));
+    % intB = sum(sum(input(:,:,3)))/sum(sum(input(:,:,3)>0));
+    % area_ratio = sum(sum(sum(input>0)))/sum(mask_circle(:));
+    % output_metrics_wo_deep_red(:,kk) = [intR,intG,intB,area_ratio];
+
+    %%
+    imwrite(uint8(img_central), strcat('./output2/',files(kk).name,'_central_','.tiff'))
+    imwrite(uint8(img_norm), strcat('./output2/',files(kk).name,'_norm_','.tiff'))
+    imwrite(uint8(img_cells), strcat('./output2/',files(kk).name,'_cells_','.tiff'))
+    imwrite(uint8(img_norm.*(1-mask_cells)), strcat('./output2/',files(kk).name,'_no_cells_','.tiff'))
    
 end
 
@@ -100,8 +108,15 @@ for k=1:4
     alloy = {'5','5','5','5','3','3','3','3','4','4','4','4','1','1','1','1','2','2','2','2'};
     [~,~,stats] = anova1(strength,alloy);
 end
-for k=1:4
-    strength = [squeeze(output_metrics_wo_deep_red(k,:))];
-    alloy = {'5','5','5','5','3','3','3','3','4','4','4','4','1','1','1','1','2','2','2','2'};
-    [~,~,stats] = anova1(strength,alloy);
-end
+% for k=1:4
+%     strength = [squeeze(output_metrics_wo_deep_red(k,:))];
+%     alloy = {'5','5','5','5','3','3','3','3','4','4','4','4','1','1','1','1','2','2','2','2'};
+%     [~,~,stats] = anova1(strength,alloy);
+% end
+
+%% export table
+T = array2table(output_metrics);
+T.Properties.VariableNames = ["5_1","5_2","5_3","5_4","3_1","3_2","3_3","3_4","4_1","4_2","4_3","4_4","1_1","1_2","1_3","1_4","2_1","2_2","2-3","2_4"];
+T.Properties.RowNames = ["intR","intG","intB","area_ratio"];
+
+writetable(T, "./output2/sirius_red.txt",'Delimiter','\t','WriteRowNames',true)
