@@ -1,10 +1,10 @@
-clear all
-close all
+% clear all
+% close all
 
 path = './input/';
 files = dir([path,'*.tif']);
 mag = 1/30;
-savepath ='./output_v03/';
+savepath ='./output_v04/';
 
 for kk = 1:length(files)
     %% read image
@@ -61,20 +61,24 @@ for kk = 1:length(files)
     for k=1:y
       output(1:x,k,:) = score(x*(k-1)+1:x*k,:);
     end
+    mask_cells = output(:,:,1)>0;
     % figure(201);imagesc(output(:,:,1));daspect([1 1 1])
-    
-    mask_cells = (output(:,:,1)>15);
+
+
+    %% create output images
+    for k=1:3
+        img_cells_abs(:,:,k) = output(:,:,1)*coeff(k,1);
+    end
+    img_noncells_abs = -img_cells_abs.*(1-mask_cells);
+    img_cells_abs = img_cells_abs.*mask_cells;
     img_cells_trans = img_bg_normalized.*mask_cells;
     img_noncells_trans = img_bg_normalized.*(1-mask_cells);
-    img_cells_abs = img_absorption.*mask_cells;
-    img_noncells_abs = img_absorption.*(1-mask_cells);
-    figure(103);
-    subplot(1,4,1);imagesc(uint8(img_cells_trans));daspect([1 1 1])
-    subplot(1,4,2);imagesc(uint8(img_noncells_trans));daspect([1 1 1])
-    subplot(1,4,3);imagesc(uint8(img_cells_abs));daspect([1 1 1])
-    subplot(1,4,4);imagesc(uint8(img_noncells_abs));daspect([1 1 1])
-    % waitforbuttonpress
+    figure(110);
+    subplot(1,3,1);imagesc(uint8(img_cells_trans));daspect([1 1 1])
+    subplot(1,3,2);imagesc(uint8(img_noncells_trans));daspect([1 1 1])
+    subplot(1,3,3);imagesc(uint8(img_cells_abs*5));daspect([1 1 1])
     drawnow
+    % waitforbuttonpress
 
     %% metrics
     input = img_cells_trans;
@@ -88,18 +92,17 @@ for kk = 1:length(files)
     area_ratio = sum(sum(squeeze(input(:,:,1)>0)))/sum(mask_circle(:));
     output_metrics(:,kk) = [intR,intG,intB,absR,absG,absB,area_ratio];
 
-    %%
     imwrite(uint8(img_central), strcat(savepath, files(kk).name,'_central_','.tiff'))
     imwrite(uint8(img_bg_normalized), strcat(savepath, files(kk).name,'_norm_','.tiff'))
     imwrite(uint8(img_cells_trans), strcat(savepath, files(kk).name,'_cells_trans_','.tiff'))
     imwrite(uint8(img_noncells_trans), strcat(savepath, files(kk).name,'_nocells_trans_','.tiff'))
-    imwrite(uint8(img_absorption/max(img_absorption(:))*255*2), strcat(savepath, files(kk).name,'_cells_absorption_','.tiff'))
-    imwrite(uint8(img_cells_abs/max(img_cells_abs(:))*255*2), strcat(savepath, files(kk).name,'_cells_abs_','.tiff'))
-    imwrite(uint8(img_noncells_abs/max(img_cells_abs(:))*255*2), strcat(savepath, files(kk).name,'_nocells_abs','.tiff'))
+    imwrite(uint8(img_absorption/max(img_absorption(:))*255*5), strcat(savepath, files(kk).name,'_cells_absorption_','.tiff'))
+    imwrite(uint8(img_cells_abs/max(img_cells_abs(:))*255*5), strcat(savepath, files(kk).name,'_cells_abs_','.tiff'))
+    imwrite(uint8(img_noncells_abs/max(img_cells_abs(:))*255*5), strcat(savepath, files(kk).name,'_noncells_abs_','.tiff'))
     imwrite(uint8(mask_cells*255), strcat(savepath, files(kk).name,'_cellmask','.tiff'))
     figure(200);plot(coeff(:,1),'ko-');xlim([0.5,3.5]);ylim([0,1]);saveas(gcf,strcat(savepath, files(kk).name,'_pca'),'epsc')
 end
-
+% fasdfa
 for k=1:7
     strength = [squeeze(output_metrics(k,:))];
     alloy = {'5','5','5','5','3','3','3','3','4','4','4','4','1','1','1','1','2','2','2','2'};
