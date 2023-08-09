@@ -2,7 +2,7 @@ clear all
 close all
 
 %% Read file path
-path = pwd;
+path = './input/';
 files = dir([path,'/*_ch01.tif']);
 
 %% Output matrix

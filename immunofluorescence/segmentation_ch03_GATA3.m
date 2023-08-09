@@ -2,8 +2,8 @@ clear all
 close all
 
 %% Read file path
-path = pwd;
-files = dir([path,'/*_ch03.tif']);
+path = './input/';
+files = dir([path,'*_ch03.tif']);
 
 %% Output matrix
 T_whole = table({'GATA3_pos_cell_num'});
